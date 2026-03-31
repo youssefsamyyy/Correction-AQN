@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Noto Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-qahera-red: #E31E24;
+  --color-qahera-dark: #1A1A1A;
+  --color-qahera-gray: #F5F5F5;
+}
+
+@layer base {
+  body {
+    @apply bg-qahera-gray text-qahera-dark font-sans;
+  }
+}
+
+.glass-panel {
+  @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl;
+}
+
+.arabic-text {
+  direction: rtl;
+  font-family: "Noto Sans Arabic", sans-serif;
+}
