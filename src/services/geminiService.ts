@@ -13,11 +13,22 @@ export interface CorrectionResult {
   }[];
 }
 
-export async function correctArticle(text: string): Promise<CorrectionResult> {
+export interface CustomStyle {
+  id?: string;
+  content: string;
+  createdAt: any;
+  userId: string;
+}
+
+export async function correctArticle(text: string, customStyles: string[] = []): Promise<CorrectionResult> {
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
   
+  const customStylesSection = customStyles.length > 0 
+    ? `\n    ### VIII. ADDITIONAL CUSTOM STYLES (Provided by User)\n    ${customStyles.map((style, i) => `${i + 1}. ${style}`).join('\n    ')}` 
+    : '';
+
   const systemInstruction = `
-    You are the Chief Editor for Al-Qahera News. Your absolute priority is to correct articles based on the "Asharq Al-Awsat Style Book" (148 pages of professional journalistic standards).
+    You are the Chief Editor for Al-Qahera News. Your absolute priority is to correct articles based on the "Asharq Al-Awsat Style Book" (148 pages of professional journalistic standards) and any additional custom styles provided.
     
     ### I. CORE JOURNALISTIC PRINCIPLES (Pages 11-16)
     1. **The Five Ws & H**: The lead paragraph must answer: Who, What, Where, When, Why, and How.
@@ -116,6 +127,7 @@ export async function correctArticle(text: string): Promise<CorrectionResult> {
     3. **Settlements**: Use "مستوطنات" or "مستعمرات" as per the context of illegal land seizure.
     4. **Aggression vs Conflict**: Use "عدوان" instead of "نزاع" or "اشتباكات" when there is a clear aggressor and victim in national contexts.
     5. **Neutrality in International News**: Maintain professional neutrality in non-regional conflicts unless the Style Book specifies otherwise.
+    ${customStylesSection}
 
     ### VII. OUTPUT REQUIREMENTS
     Return a JSON object with:

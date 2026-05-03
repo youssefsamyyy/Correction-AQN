@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Languages, 
@@ -16,11 +16,62 @@ import {
   History,
   Info,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  PlusCircle
 } from 'lucide-react';
 import { correctArticle, CorrectionResult } from './services/geminiService';
+import { onSnapshot, collection, query, orderBy } from 'firebase/firestore';
+import { db, auth } from './lib/firebase';
+import NewStyleModal from './components/NewStyleModal';
 
 const LOGO_URL = "https://alqaheranews.net/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo.6a2665e0.png&w=3840&q=75";
+
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
+    },
+    operationType,
+    path
+  }
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
 
 export default function App() {
   const [inputText, setInputText] = useState('');
@@ -29,6 +80,19 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [isArabic, setIsArabic] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [customStyles, setCustomStyles] = useState<string[]>([]);
+
+  useEffect(() => {
+    const q = query(collection(db, 'customStyles'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const styles = snapshot.docs.map(doc => doc.data().content);
+      setCustomStyles(styles);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'customStyles');
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleCorrect = async () => {
     if (!inputText.trim()) return;
@@ -36,7 +100,7 @@ export default function App() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await correctArticle(inputText);
+      const data = await correctArticle(inputText, customStyles);
       setResult(data);
     } catch (err) {
       console.error(err);
@@ -81,6 +145,13 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-qahera-red hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-qahera-red/10"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">New Styles</span>
+            </button>
             <div className="flex bg-gray-100 p-1 rounded-lg">
               <button 
                 onClick={() => setIsArabic(true)}
@@ -253,6 +324,11 @@ export default function App() {
           </p>
         </div>
       </footer>
+      <NewStyleModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSuccess={() => {}}
+      />
     </div>
   );
 }

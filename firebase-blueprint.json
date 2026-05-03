@@ -1,0 +1,31 @@
+{
+  "entities": {
+    "CustomStyle": {
+      "title": "Custom Style Book",
+      "description": "Custom rules and guidelines provided by the user.",
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string",
+          "description": "The text content of the style book rules."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of creation."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who added the style."
+        }
+      },
+      "required": ["content", "createdAt", "userId"]
+    }
+  },
+  "firestore": {
+    "/customStyles/{styleId}": {
+      "schema": "CustomStyle",
+      "description": "Collection of user-provided custom style rules."
+    }
+  }
+}

@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper for IDs
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+
+    // Custom Styles Collection
+    match /customStyles/{styleId} {
+      // Validation helper
+      function isValidCustomStyle(data) {
+        return data.keys().hasAll(['content', 'createdAt', 'userId']) &&
+               data.keys().size() == 3 &&
+               data.content is string && data.content.size() <= 5000 &&
+               data.userId is string && data.userId.size() <= 128;
+      }
+
+      // Allow anyone to read/list as it's a shared organizational style book
+      allow read, list: if true;
+
+      // Allow creating a new style
+      allow create: if isValidCustomStyle(request.resource.data) &&
+                      request.resource.data.createdAt == request.time;
+    }
+  }
+}

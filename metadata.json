@@ -1,5 +1,5 @@
 {
   "name": "Al-Qahera News Editor",
-  "description": "Professional language correction tool for journalists based on the Asharq Al-Awsat Style Book.",
+  "description": "Professional language correction tool for journalists with built-in style book rules and custom style learning capabilities.",
   "requestFramePermissions": []
 }
